@@ -28,7 +28,7 @@ router.get('/start', async (ctx, next) => {
       formatConfigCmd,
       startDownCmd
     ]
-    await utils.doShellAllCmd(cmds)
+    utils.doShellAllCmd(cmds)
 
     // await utils.doShellCmd(getCloneAllShRepoCmd(name))
 
