@@ -4,7 +4,6 @@ const json = require('koa-json')
 const onerror = require('koa-onerror')
 var cors = require('koa-cors');
 const index = require('./routes/index')
-const users = require('./routes/users')
 
 // error handler
 onerror(app);
