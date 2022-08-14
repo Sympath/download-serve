@@ -24,16 +24,16 @@ router.get('/start', async (ctx, next) => {
       `cd ${path.resolve(__dirname, '../all-kkb')}`,
       cloneAllShRepoCmd,
       formatConfigNameCmd,
-      formatConfigCookieCmd,
-      startDownCmd
+      // formatConfigCookieCmd,
+      // startDownCmd
     ]
     process.nextTick(
       async () => {
         try {
           await utils.doShellAllCmd(cmds)
           console.log('下载完成');
-          // await utils.writeFileRecursive(`${path.resolve(__dirname, '../all-kkb/' + name)}/cookie.txt`, cookie)
-          // utils.doShellCmd(startDownCmd)
+          await utils.writeFileRecursive(`${path.resolve(__dirname, '../all-kkb/' + name)}/cookie.txt`, cookie)
+          utils.doShellCmd(startDownCmd)
         } catch (error) {
           console.log(`执行失败${error}`);
           ctx.body = `下载失败，原因: ${error}`
