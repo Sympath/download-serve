@@ -1,6 +1,7 @@
 const Koa = require('koa')
 const app = new Koa()
 const json = require('koa-json')
+const bodyParser = require('koa-bodyparser')
 const onerror = require('koa-onerror')
 var cors = require('koa-cors');
 const index = require('./routes/index')
@@ -9,6 +10,7 @@ const index = require('./routes/index')
 onerror(app);
 app.use(cors());
 app.use(json())
+app.use(bodyParser())
 
 
 // logger

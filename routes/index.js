@@ -5,10 +5,14 @@ let getCloneAllShRepoCmd = (name) => `git clone git@github.com:Sympath/download-
 let getStartDownCmd = (name) => `cd ${path.resolve(__dirname, '../all-kkb/' + name)} && sh all.sh`
 let getFormatConfigNameCmd = (name, cookie) => `echo ${name} > ${path.resolve(__dirname, '../all-kkb/' + name)}/name.txt`
 let getFormatConfigCookieCmd = (name, cookie) => `echo ${cookie} > ${path.resolve(__dirname, '../all-kkb/' + name)}/cookie.txt `
-router.get('/start', async (ctx, next) => {
-  let { cookie, name } = ctx.query
+router.post('/start', async (ctx, next) => {
+  debugger
+  let { cookie, name } = ctx.request.body
   console.log(cookie, name);
-  cookie = decodeURIComponent(cookie)
+  if (typeof cookie === 'object') {
+    cookie = JSON.stringify(cookie)
+  }
+  // cookie = decodeURIComponent(cookie)
   debugger
   try {
     // 创建空间
