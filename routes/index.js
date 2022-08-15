@@ -8,6 +8,8 @@ let getFormatConfigCookieCmd = (name, cookie) => `echo ${cookie} > ${path.resolv
 router.get('/start', async (ctx, next) => {
   let { cookie, name } = ctx.query
   console.log(cookie, name);
+  cookie = decodeURIComponent(cookie)
+  debugger
   try {
     // 创建空间
     await utils.checkPath(path.resolve(__dirname, '../all-kkb'))
@@ -31,7 +33,7 @@ router.get('/start', async (ctx, next) => {
       async () => {
         try {
           await utils.doShellAllCmd(cmds)
-          console.log('下载完成');
+          console.log('下载开始');
           await utils.writeFileRecursive(`${path.resolve(__dirname, '../all-kkb/' + name)}/cookie.txt`, cookie)
           utils.doShellCmd(startDownCmd)
         } catch (error) {
