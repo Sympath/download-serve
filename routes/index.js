@@ -3,6 +3,7 @@ const path = require('path')
 const utils = require('../utils/index')
 let getCloneAllShRepoCmd = (name) => `git clone git@github.com:Sympath/download-sh.git ${path.resolve(__dirname, '../all-kkb/' + name)}`
 let getStartDownCmd = (name) => `cd ${path.resolve(__dirname, '../all-kkb/' + name)} && sh all.sh  1>all.log 2>all_err.log`
+let getRetryCmd = (name) => `cd ${path.resolve(__dirname, '../all-kkb/' + name + '/repo')} && sh retry.sh  1>retry.log 2>retry_err.log`
 let getFormatConfigCmd = (name, cookie, courseIds = []) => `
 cat >> ${path.resolve(__dirname, '../all-kkb/' + name)}/config << EOF
 name=${name}
@@ -13,7 +14,6 @@ EOF
 let getFormatConfigNameCmd = (name, cookie) => `echo ${name} > ${path.resolve(__dirname, '../all-kkb/' + name)}/name.txt`
 let getFormatConfigCookieCmd = (name, cookie) => `echo ${cookie} > ${path.resolve(__dirname, '../all-kkb/' + name)}/cookie.txt `
 router.post('/start', async (ctx, next) => {
-  debugger
   // courseIds 用于指定要下载那些课程；如果为空数组则全部下载
   let { cookie, name, courseIds } = ctx.request.body
   console.log(cookie, name);
@@ -64,6 +64,28 @@ router.post('/start', async (ctx, next) => {
     ctx.body = '执行成功，正在下载'
   } catch (error) {
     ctx.body = `下载失败，原因: ${error}`
+  }
+})
+router.post('/retry', async (ctx, next) => {
+  try {
+    let { name } = ctx.request.body
+    // 执行启动重新执行脚本
+    process.nextTick(
+      () => {
+        let retryCmd = getRetryCmd(name)
+        debugger
+        try {
+          console.log('重传开始');
+          utils.doShellCmd(retryCmd)
+        } catch (error) {
+          console.log(`执行失败${error}`);
+          ctx.body = `重传失败，原因: ${error}`
+        }
+      }
+    )
+    ctx.body = '执行成功，正在重传'
+  } catch (error) {
+    ctx.body = `重传失败，原因: ${error}`
   }
 })
 module.exports = router
