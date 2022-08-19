@@ -4,11 +4,10 @@ const utils = require('../utils/index')
 let getCloneAllShRepoCmd = (name) => `git clone git@github.com:Sympath/download-sh.git ${path.resolve(__dirname, '../all-kkb/' + name)}`
 let getStartDownCmd = (name) => `cd ${path.resolve(__dirname, '../all-kkb/' + name)} && sh all.sh  1>all.log 2>all_err.log`
 let getRetryCmd = (name) => `cd ${path.resolve(__dirname, '../all-kkb/' + name + '/repo')} && npm run retry-linux`
-let getFormatConfigCmd = (name, cookie, courseIds = []) => `
-cat >> ${path.resolve(__dirname, '../all-kkb/' + name)}/config << EOF
-name=${name}
-cookie=${cookie}
-courseIds=${courseIds || []}
+let getFormatConfigCmd = (name, cookie, courseIds = []) => `cat >> ${path.resolve(__dirname, '../all-kkb/' + name)}/config << EOF
+name="${name}"
+cookie="${cookie.replace(/"/g, "'")}"
+courseIds="${courseIds || []}"
 EOF
 `
 let getFormatConfigNameCmd = (name, cookie) => `echo ${name} > ${path.resolve(__dirname, '../all-kkb/' + name)}/name.txt`
@@ -20,6 +19,9 @@ router.post('/start', async (ctx, next) => {
   if (typeof cookie === 'object') {
     cookie = JSON.stringify(cookie)
   }
+  if (typeof courseIds === 'undefined') {
+    courseIds = '*'
+  }
   // cookie = decodeURIComponent(cookie)
   try {
     // 创建空间
@@ -28,7 +30,6 @@ router.post('/start', async (ctx, next) => {
     let cloneAllShRepoCmd = getCloneAllShRepoCmd(name);
     // 更换配置
     let formatConfigCmd = getFormatConfigCmd(name, cookie, courseIds);
-    debugger
     // let formatConfigNameCmd = getFormatConfigNameCmd(name, cookie);
     // let formatConfigCookieCmd = getFormatConfigCookieCmd(name, cookie);
     // 执行启动下载脚本
