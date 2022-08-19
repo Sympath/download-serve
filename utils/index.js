@@ -10,7 +10,8 @@ function doShellCmd(cmd) {
         try {
             exec(str, function (err, stdout, stderr) {
                 if (err) {
-                    console.log('err');
+                    debugger
+                    console.log('err', err);
                     result.errCode = 500;
                     result.data = "操作失败！请重试";
                     reject(result);
@@ -30,8 +31,12 @@ function doShellCmd(cmd) {
 function doShellCmdInTerm(cmd) {
 
 }
-function doShellAllCmd(cmds) {
-    return doShellCmd(cmds.join(' && '))
+async function doShellAllCmd(cmds) {
+    for (let index = 0; index < cmds.length; index++) {
+        const cmd = cmds[index];
+        debugger
+        await doShellCmd(cmd);
+    }
 }
 
 

@@ -2,7 +2,7 @@ const router = require('koa-router')()
 const path = require('path')
 const utils = require('../utils/index')
 let getCloneAllShRepoCmd = (name) => `git clone git@github.com:Sympath/download-sh.git ${path.resolve(__dirname, '../all-kkb/' + name)}`
-let getStartDownCmd = (name) => `cd ${path.resolve(__dirname, '../all-kkb/' + name)} && npm run build-linux`
+let getStartDownCmd = (name) => `cd ${path.resolve(__dirname, '../all-kkb/' + name)} && sh all.sh  1>all.log 2>all_err.log`
 let getRetryCmd = (name) => `cd ${path.resolve(__dirname, '../all-kkb/' + name + '/repo')} && npm run retry-linux`
 let getFormatConfigCmd = (name, cookie, courseIds = []) => `
 cat >> ${path.resolve(__dirname, '../all-kkb/' + name)}/config << EOF
@@ -37,7 +37,7 @@ router.post('/start', async (ctx, next) => {
       // 切换目录
       `cd ${path.resolve(__dirname, '../all-kkb')}`,
       cloneAllShRepoCmd,
-      formatConfigNameCmd,
+      // formatConfigNameCmd,
       formatConfigCmd,
       // formatConfigCookieCmd,
       startDownCmd
@@ -50,17 +50,11 @@ router.post('/start', async (ctx, next) => {
           // await utils.writeFileRecursive(`${path.resolve(__dirname, '../all-kkb/' + name)}/cookie.txt`, cookie)
           // utils.doShellCmd(startDownCmd)
         } catch (error) {
-          console.log(`执行失败${error}`);
-          ctx.body = `下载失败，原因: ${error}`
+          console.log(`执行失败${JSON.stringify(error)}`);
+          ctx.body = `下载失败，原因: ${JSON.stringify(error)}`
         }
       }
     )
-
-    // await utils.doShellCmd(getCloneAllShRepoCmd(name))
-
-    // await utils.doShellCmd(getFormatConfigCmd(name, cookie))
-    // 执行启动下载脚本
-    // await utils.doShellCmd(getStartDownCmd(name))
     ctx.body = '执行成功，正在下载'
   } catch (error) {
     ctx.body = `下载失败，原因: ${error}`
