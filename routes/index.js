@@ -8,7 +8,7 @@ let getFormatConfigCmd = (name, cookie, courseIds = []) => `
 cat >> ${path.resolve(__dirname, '../all-kkb/' + name)}/config << EOF
 name=${name}
 cookie=${cookie}
-courseIds=${courseIds}
+courseIds=${courseIds || []}
 EOF
 `
 let getFormatConfigNameCmd = (name, cookie) => `echo ${name} > ${path.resolve(__dirname, '../all-kkb/' + name)}/name.txt`
@@ -28,6 +28,7 @@ router.post('/start', async (ctx, next) => {
     let cloneAllShRepoCmd = getCloneAllShRepoCmd(name);
     // 更换配置
     let formatConfigCmd = getFormatConfigCmd(name, cookie, courseIds);
+    debugger
     // let formatConfigNameCmd = getFormatConfigNameCmd(name, cookie);
     // let formatConfigCookieCmd = getFormatConfigCookieCmd(name, cookie);
     // 执行启动下载脚本

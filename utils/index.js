@@ -34,7 +34,6 @@ function doShellCmdInTerm(cmd) {
 async function doShellAllCmd(cmds) {
     for (let index = 0; index < cmds.length; index++) {
         const cmd = cmds[index];
-        debugger
         await doShellCmd(cmd);
     }
 }
