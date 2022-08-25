@@ -7,7 +7,7 @@ let getRetryCmd = (name) => `cd ${path.resolve(__dirname, '../all-kkb/' + name +
 let getFormatConfigCmd = (name, cookie, courseIds = []) => `cat >> ${path.resolve(__dirname, '../all-kkb/' + name)}/config << EOF
 name="${name}"
 cookie="${cookie.replace(/"/g, "'")}"
-courseIds="${courseIds || []}"
+courseIds='${courseIds.join(',')}'
 EOF
 `
 let getFormatConfigNameCmd = (name, cookie) => `echo ${name} > ${path.resolve(__dirname, '../all-kkb/' + name)}/name.txt`
