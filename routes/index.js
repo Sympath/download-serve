@@ -4,12 +4,17 @@ const utils = require('../utils/index')
 let getCloneAllShRepoCmd = (name) => `git clone git@github.com:Sympath/download-sh.git ${path.resolve(__dirname, '../all-kkb/' + name)}`
 let getStartDownCmd = (name) => `cd ${path.resolve(__dirname, '../all-kkb/' + name)} && sh all.sh  1>all.log 2>all_err.log`
 let getRetryCmd = (name) => `cd ${path.resolve(__dirname, '../all-kkb/' + name + '/repo')} && npm run retry-linux`
-let getFormatConfigCmd = (name, cookie, courseIds = []) => `cat >> ${path.resolve(__dirname, '../all-kkb/' + name)}/config << EOF
+let getFormatConfigCmd = (name, cookie, courseIds = []) => {
+  if (typeof courseIds === 'object') {
+    courseIds = courseIds.join(',')
+  }
+  return `cat >> ${path.resolve(__dirname, '../all-kkb/' + name)}/config << EOF
 name="${name}"
 cookie="${cookie.replace(/"/g, "'")}"
-courseIds='${courseIds.join(',')}'
+courseIds='${courseIds}'
 EOF
 `
+}
 let getFormatConfigNameCmd = (name, cookie) => `echo ${name} > ${path.resolve(__dirname, '../all-kkb/' + name)}/name.txt`
 let getFormatConfigCookieCmd = (name, cookie) => `echo ${cookie} > ${path.resolve(__dirname, '../all-kkb/' + name)}/cookie.txt `
 router.post('/start', async (ctx, next) => {
