@@ -18,6 +18,35 @@ let getSingleDownCmd = (m3u8Url, bypyDir, bypyFullDir, filename) => {
   return cmd
 }
 let getRetryCmd = (name) => `cd ${path.resolve(__dirname, '../all-kkb/' + name + '/repo')} && npm run retry-linux`
+// 下载单个视频时写入本地文件配置
+let getSingleFormatConfigCmd = (m3u8Url, courseName, bypyFullDir, bypyDir) => {
+  if (typeof courseIds === 'object') {
+    courseIds = courseIds.join(',')
+  }
+  return `cat >> ${path.resolve(__dirname, '../all-kkb/' + bypyDir + '/repo/config/single-download.js')} << EOF
+module.exports = {
+    m3u8Url: '${m3u8Url}',
+    courseName: '${courseName}',
+    bypyFullDir: '${bypyFullDir}',
+    bypyDir: '${bypyDir}'
+}
+EOF
+`
+}
+// 下载单个视频时写入本地文件配置
+let getSingleFormatConfigJsCmd = (m3u8Url, courseName, bypyFullDir, bypyDir) => {
+  if (typeof courseIds === 'object') {
+    courseIds = courseIds.join(',')
+  }
+  return `cat >> ${path.resolve(__dirname, '../all-kkb/' + bypyDir + '/repo/config/single-download')} << EOF
+m3u8Url='${m3u8Url}'
+courseName='${courseName}'
+bypyFullDir='${bypyFullDir}'
+bypyDir='${bypyDir}'
+EOF
+`
+}
+// 下载所有视频时写入本地文件配置
 let getFormatConfigCmd = (name, cookie, courseIds = []) => {
   if (typeof courseIds === 'object') {
     courseIds = courseIds.join(',')
@@ -29,8 +58,6 @@ courseIds='${courseIds}'
 EOF
 `
 }
-let getFormatConfigNameCmd = (name, cookie) => `echo ${name} > ${path.resolve(__dirname, '../all-kkb/' + name)}/name.txt`
-let getFormatConfigCookieCmd = (name, cookie) => `echo ${cookie} > ${path.resolve(__dirname, '../all-kkb/' + name)}/cookie.txt `
 router.post('/start', async (ctx, next) => {
   // courseIds 用于指定要下载那些课程；如果为空数组则全部下载
   let { cookie, name, courseIds } = ctx.request.body
@@ -88,7 +115,7 @@ router.post('/retry', async (ctx, next) => {
     process.nextTick(
       () => {
         let singleDownCmd = getSingleDownCmd(m3u8Url, bypyDir, bypyFullDir, filename)
-        debugger
+
         try {
           utils.doShellCmd(singleDownCmd)
         } catch (error) {
@@ -102,26 +129,40 @@ router.post('/retry', async (ctx, next) => {
     ctx.body = `重传失败，原因: ${error}`
   }
 })
-router.post('/single-download', async (ctx, next) => {
+router.post('/down-single', async (ctx, next) => {
   try {
-    let { m3u8Url } = ctx.request.body
+    let { m3u8Url, courseName, bypyFullDir, bypyDir } = ctx.request.body
+    debugger
+    let singleFormatConfigJsCmd = getSingleFormatConfigJsCmd(m3u8Url, courseName, bypyFullDir, bypyDir);
+    let singleFormatConfigCmd = getSingleFormatConfigCmd(m3u8Url, courseName, bypyFullDir, bypyDir);
+    let cmds = [
+      `rm -rf ${path.resolve(__dirname, '../all-kkb/' + bypyDir + '/repo/config/single-download-config.js')}`,
+      `rm -rf ${path.resolve(__dirname, '../all-kkb/' + bypyDir + '/repo/config/single-download-config')}`,
+      // 切换目录
+      `cd ${path.resolve(__dirname, '../all-kkb/' + bypyDir + '/repo')}`,
+      singleFormatConfigJsCmd,
+      singleFormatConfigCmd,
+      // formatConfigCookieCmd,
+      // 'npm run single-download'
+      'npm run single-download-sh' // 考虑到日志输出问题，采用sh方式执行
+    ]
     // 执行启动重新执行脚本
     process.nextTick(
-      () => {
-        let retryCmd = getSingleDownCmd(name)
-        debugger
+      async () => {
         try {
-          console.log('重传开始');
-          utils.doShellCmd(retryCmd)
+          await utils.doShellAllCmd(cmds)
+          console.log('下载开始');
+          // await utils.writeFileRecursive(`${path.resolve(__dirname, '../all-kkb/' + name)}/cookie.txt`, cookie)
+          // utils.doShellCmd(startDownCmd)
         } catch (error) {
-          console.log(`执行失败${error}`);
-          ctx.body = `重传失败，原因: ${error}`
+          console.log(`执行失败${JSON.stringify(error)}`);
+          ctx.body = `下载失败，原因: ${JSON.stringify(error)}`
         }
       }
     )
     ctx.body = '执行成功，正在重传'
   } catch (error) {
-    ctx.body = `重传失败，原因: ${error}`
+    ctx.body = `执行失败，原因: ${error}`
   }
 })
 module.exports = router

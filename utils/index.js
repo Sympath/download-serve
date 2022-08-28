@@ -10,7 +10,7 @@ function doShellCmd(cmd) {
         try {
             exec(str, function (err, stdout, stderr) {
                 if (err) {
-                    debugger
+
                     console.log('err', err);
                     result.errCode = 500;
                     result.data = "操作失败！请重试";
