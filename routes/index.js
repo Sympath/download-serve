@@ -3,6 +3,20 @@ const path = require('path')
 const utils = require('../utils/index')
 let getCloneAllShRepoCmd = (name) => `git clone git@github.com:Sympath/download-sh.git ${path.resolve(__dirname, '../all-kkb/' + name)}`
 let getStartDownCmd = (name) => `cd ${path.resolve(__dirname, '../all-kkb/' + name)} && sh all.sh  1>all.log 2>all_err.log`
+// 下载单个视频的动作
+let getSingleDownCmd = (m3u8Url, bypyDir, bypyFullDir, filename) => {
+  let params = [['m3u8Url', m3u8Url],
+  ['bypyDir', bypyDir],
+  ['bypyFullDir', bypyFullDir],
+  ['filename', filename]]
+  let paramStr = ''
+  params.forEach(param => {
+    let [key, val] = param;
+    paramStr += `--${key}=${val} `
+  })
+  let cmd = `cd ${path.resolve(__dirname, '../all-kkb/' + bypyDir)} && sh single-download.sh ${paramStr} 1>single-download.log 2>single-download_err.log`
+  return cmd
+}
 let getRetryCmd = (name) => `cd ${path.resolve(__dirname, '../all-kkb/' + name + '/repo')} && npm run retry-linux`
 let getFormatConfigCmd = (name, cookie, courseIds = []) => {
   if (typeof courseIds === 'object') {
@@ -69,11 +83,32 @@ router.post('/start', async (ctx, next) => {
 })
 router.post('/retry', async (ctx, next) => {
   try {
-    let { name } = ctx.request.body
+    let { m3u8Url, bypyDir, bypyFullDir, filename } = ctx.request.body
     // 执行启动重新执行脚本
     process.nextTick(
       () => {
-        let retryCmd = getRetryCmd(name)
+        let singleDownCmd = getSingleDownCmd(m3u8Url, bypyDir, bypyFullDir, filename)
+        debugger
+        try {
+          utils.doShellCmd(singleDownCmd)
+        } catch (error) {
+          console.log(`执行失败${error}`);
+          ctx.body = `重传失败，原因: ${error}`
+        }
+      }
+    )
+    ctx.body = '执行成功，正在下载单个视频'
+  } catch (error) {
+    ctx.body = `重传失败，原因: ${error}`
+  }
+})
+router.post('/single-download', async (ctx, next) => {
+  try {
+    let { m3u8Url } = ctx.request.body
+    // 执行启动重新执行脚本
+    process.nextTick(
+      () => {
+        let retryCmd = getSingleDownCmd(name)
         debugger
         try {
           console.log('重传开始');
