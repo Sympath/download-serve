@@ -114,7 +114,6 @@ router.post('/config-retry', async (ctx, next) => {
     // 执行启动下载脚本：生成新的配置文件后重新启动，这里不会重新生成课程配置文件（current）
     let retryDownCmd = getRunDownCmd(name)
     let cmds = [
-      cloneAllShRepoCmd,
       formatConfigCmd,
       retryDownCmd
     ]
