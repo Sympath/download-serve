@@ -2,8 +2,8 @@ const router = require('koa-router')()
 const path = require('path')
 const utils = require('../utils/index')
 let getCloneAllShRepoCmd = (name) => `git clone git@github.com:Sympath/download-sh.git ${path.resolve(__dirname, '../all-kkb/' + name)}`
-let getStartDownCmd = (currentRepoPath) => `cd ${currentRepoPath} && npm run all`
-let getRunDownCmd = (currentRepoPath) => `cd ${currentRepoPath} && npm run run`
+let getStartDownCmd = (currentShRepoPath) => `cd ${currentShRepoPath} && npm run all`
+let getRunDownCmd = (currentShRepoPath) => `cd ${currentShRepoPath} && npm run config-retry`
 // 下载单个视频时写入本地文件配置
 let getSingleFormatConfigCmd = (m3u8Url, courseName, bypyFullDir, bypyDir) => {
   if (typeof courseIds === 'object') {
@@ -33,11 +33,11 @@ EOF
 `
 }
 // 下载所有视频时写入本地文件配置
-let getFormatConfigCmd = (name, cookie, courseIds = []) => {
+let getFormatConfigCmd = (currentShRepoPath, name, cookie, courseIds = []) => {
   if (typeof courseIds === 'object') {
     courseIds = courseIds.join(',')
   }
-  return `cat > ${path.resolve(__dirname, '../all-kkb/' + name)}/config << EOF
+  return `cat > ${currentShRepoPath}/config << EOF
 name="${name}"
 cookie="${cookie.replace(/"/g, "'")}"
 courseIds='${courseIds}'
@@ -49,6 +49,7 @@ router.post('/start', async (ctx, next) => {
   let { cookie, name, courseIds } = ctx.request.body
   console.log(cookie, name);
   let currentRepoPath = path.resolve(__dirname, '../all-kkb/' + name + '/repo')
+  let currentShRepoPath = path.resolve(__dirname, '../all-kkb/' + name)
   if (typeof cookie === 'object') {
     cookie = JSON.stringify(cookie)
   }
@@ -62,11 +63,11 @@ router.post('/start', async (ctx, next) => {
     // 下载脚本仓库
     let cloneAllShRepoCmd = getCloneAllShRepoCmd(name);
     // 更换配置
-    let formatConfigCmd = getFormatConfigCmd(name, cookie, courseIds);
+    let formatConfigCmd = getFormatConfigCmd(currentShRepoPath, name, cookie, courseIds);
     // let formatConfigNameCmd = getFormatConfigNameCmd(name, cookie);
     // let formatConfigCookieCmd = getFormatConfigCookieCmd(name, cookie);
     // 执行启动下载脚本
-    let startDownCmd = getStartDownCmd(currentRepoPath, name)
+    let startDownCmd = getStartDownCmd(currentShRepoPath, name)
     let cmds = [
       `rm -rf ${path.resolve(__dirname, '../all-kkb/' + name)}`,
       cloneAllShRepoCmd,
@@ -97,6 +98,7 @@ router.post('/config-retry', async (ctx, next) => {
   // courseIds 用于指定要下载那些课程；如果为空数组则全部下载
   let { cookie, name, courseIds } = ctx.request.body
   let currentRepoPath = path.resolve(__dirname, '../all-kkb/' + name + '/repo')
+  let currentShRepoPath = path.resolve(__dirname, '../all-kkb/' + name)
   console.log(cookie, name);
   if (typeof cookie === 'object') {
     cookie = JSON.stringify(cookie)
@@ -109,11 +111,11 @@ router.post('/config-retry', async (ctx, next) => {
     // 创建空间
     await utils.checkPath(path.resolve(__dirname, '../all-kkb'))
     // 更换配置
-    let formatConfigCmd = getFormatConfigCmd(name, cookie, courseIds);
+    let formatConfigCmd = getFormatConfigCmd(currentShRepoPath, name, cookie, courseIds);
     // let formatConfigNameCmd = getFormatConfigNameCmd(name, cookie);
     // let formatConfigCookieCmd = getFormatConfigCookieCmd(name, cookie);
     // 执行启动下载脚本：生成新的配置文件后重新启动，这里不会重新生成课程配置文件（current）
-    let retryDownCmd = getRunDownCmd(currentRepoPath)
+    let retryDownCmd = getRunDownCmd(currentShRepoPath)
     let cmds = [
       formatConfigCmd,
       retryDownCmd
