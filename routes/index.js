@@ -2,7 +2,8 @@ const router = require('koa-router')()
 const path = require('path')
 const utils = require('../utils/index')
 let getCloneAllShRepoCmd = (name) => `git clone git@github.com:Sympath/download-sh.git ${path.resolve(__dirname, '../all-kkb/' + name)}`
-let getStartDownCmd = (name) => `cd ${path.resolve(__dirname, '../all-kkb/' + name)} && sh all.sh  1>all.log 2>all_err.log`
+let getStartDownCmd = (name) => `cd ${path.resolve(__dirname, '../all-kkb/' + name)} && npm run all`
+let getRunDownCmd = (name) => `cd ${path.resolve(__dirname, '../all-kkb/' + name)} && npm run run`
 let getRetryCmd = (name) => `cd ${path.resolve(__dirname, '../all-kkb/' + name + '/repo')} && npm run retry-linux`
 // 下载单个视频时写入本地文件配置
 let getSingleFormatConfigCmd = (m3u8Url, courseName, bypyFullDir, bypyDir) => {
@@ -73,6 +74,49 @@ router.post('/start', async (ctx, next) => {
       formatConfigCmd,
       // formatConfigCookieCmd,
       startDownCmd
+    ]
+    process.nextTick(
+      async () => {
+        try {
+          await utils.doShellAllCmd(cmds)
+          console.log('下载开始');
+          // await utils.writeFileRecursive(`${path.resolve(__dirname, '../all-kkb/' + name)}/cookie.txt`, cookie)
+          // utils.doShellCmd(startDownCmd)
+        } catch (error) {
+          console.log(`执行失败${JSON.stringify(error)}`);
+          ctx.body = `下载失败，原因: ${JSON.stringify(error)}`
+        }
+      }
+    )
+    ctx.body = '执行成功，正在下载'
+  } catch (error) {
+    ctx.body = `下载失败，原因: ${error}`
+  }
+})
+router.post('/config-retry', async (ctx, next) => {
+  // courseIds 用于指定要下载那些课程；如果为空数组则全部下载
+  let { cookie, name, courseIds } = ctx.request.body
+  console.log(cookie, name);
+  if (typeof cookie === 'object') {
+    cookie = JSON.stringify(cookie)
+  }
+  if (typeof courseIds === 'undefined') {
+    courseIds = '*'
+  }
+  // cookie = decodeURIComponent(cookie)
+  try {
+    // 创建空间
+    await utils.checkPath(path.resolve(__dirname, '../all-kkb'))
+    // 更换配置
+    let formatConfigCmd = getFormatConfigCmd(name, cookie, courseIds);
+    // let formatConfigNameCmd = getFormatConfigNameCmd(name, cookie);
+    // let formatConfigCookieCmd = getFormatConfigCookieCmd(name, cookie);
+    // 执行启动下载脚本：生成新的配置文件后重新启动，这里不会重新生成课程配置文件（current）
+    let retryDownCmd = getRunDownCmd(name)
+    let cmds = [
+      cloneAllShRepoCmd,
+      formatConfigCmd,
+      retryDownCmd
     ]
     process.nextTick(
       async () => {
