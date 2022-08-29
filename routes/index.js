@@ -2,9 +2,8 @@ const router = require('koa-router')()
 const path = require('path')
 const utils = require('../utils/index')
 let getCloneAllShRepoCmd = (name) => `git clone git@github.com:Sympath/download-sh.git ${path.resolve(__dirname, '../all-kkb/' + name)}`
-let getStartDownCmd = (name) => `cd ${path.resolve(__dirname, '../all-kkb/' + name)} && npm run all`
-let getRunDownCmd = (name) => `cd ${path.resolve(__dirname, '../all-kkb/' + name)} && npm run run`
-let getRetryCmd = (name) => `cd ${path.resolve(__dirname, '../all-kkb/' + name + '/repo')} && npm run retry-linux`
+let getStartDownCmd = (currentRepoPath) => `cd ${currentRepoPath} && npm run all`
+let getRunDownCmd = (currentRepoPath) => `cd ${currentRepoPath} && npm run run`
 // 下载单个视频时写入本地文件配置
 let getSingleFormatConfigCmd = (m3u8Url, courseName, bypyFullDir, bypyDir) => {
   if (typeof courseIds === 'object') {
@@ -49,6 +48,7 @@ router.post('/start', async (ctx, next) => {
   // courseIds 用于指定要下载那些课程；如果为空数组则全部下载
   let { cookie, name, courseIds } = ctx.request.body
   console.log(cookie, name);
+  let currentRepoPath = path.resolve(__dirname, '../all-kkb/' + name + '/repo')
   if (typeof cookie === 'object') {
     cookie = JSON.stringify(cookie)
   }
@@ -66,7 +66,7 @@ router.post('/start', async (ctx, next) => {
     // let formatConfigNameCmd = getFormatConfigNameCmd(name, cookie);
     // let formatConfigCookieCmd = getFormatConfigCookieCmd(name, cookie);
     // 执行启动下载脚本
-    let startDownCmd = getStartDownCmd(name)
+    let startDownCmd = getStartDownCmd(currentRepoPath, name)
     let cmds = [
       `rm -rf ${path.resolve(__dirname, '../all-kkb/' + name)}`,
       cloneAllShRepoCmd,
@@ -96,6 +96,7 @@ router.post('/start', async (ctx, next) => {
 router.post('/config-retry', async (ctx, next) => {
   // courseIds 用于指定要下载那些课程；如果为空数组则全部下载
   let { cookie, name, courseIds } = ctx.request.body
+  let currentRepoPath = path.resolve(__dirname, '../all-kkb/' + name + '/repo')
   console.log(cookie, name);
   if (typeof cookie === 'object') {
     cookie = JSON.stringify(cookie)
@@ -112,7 +113,7 @@ router.post('/config-retry', async (ctx, next) => {
     // let formatConfigNameCmd = getFormatConfigNameCmd(name, cookie);
     // let formatConfigCookieCmd = getFormatConfigCookieCmd(name, cookie);
     // 执行启动下载脚本：生成新的配置文件后重新启动，这里不会重新生成课程配置文件（current）
-    let retryDownCmd = getRunDownCmd(name)
+    let retryDownCmd = getRunDownCmd(currentRepoPath)
     let cmds = [
       formatConfigCmd,
       retryDownCmd
