@@ -3,27 +3,13 @@ const path = require('path')
 const utils = require('../utils/index')
 let getCloneAllShRepoCmd = (name) => `git clone git@github.com:Sympath/download-sh.git ${path.resolve(__dirname, '../all-kkb/' + name)}`
 let getStartDownCmd = (name) => `cd ${path.resolve(__dirname, '../all-kkb/' + name)} && sh all.sh  1>all.log 2>all_err.log`
-// 下载单个视频的动作
-let getSingleDownCmd = (m3u8Url, bypyDir, bypyFullDir, filename) => {
-  let params = [['m3u8Url', m3u8Url],
-  ['bypyDir', bypyDir],
-  ['bypyFullDir', bypyFullDir],
-  ['filename', filename]]
-  let paramStr = ''
-  params.forEach(param => {
-    let [key, val] = param;
-    paramStr += `--${key}=${val} `
-  })
-  let cmd = `cd ${path.resolve(__dirname, '../all-kkb/' + bypyDir)} && sh single-download.sh ${paramStr} 1>single-download.log 2>single-download_err.log`
-  return cmd
-}
 let getRetryCmd = (name) => `cd ${path.resolve(__dirname, '../all-kkb/' + name + '/repo')} && npm run retry-linux`
 // 下载单个视频时写入本地文件配置
 let getSingleFormatConfigCmd = (m3u8Url, courseName, bypyFullDir, bypyDir) => {
   if (typeof courseIds === 'object') {
     courseIds = courseIds.join(',')
   }
-  return `cat >> ${path.resolve(__dirname, '../all-kkb/' + bypyDir + '/repo/config/single-download.js')} << EOF
+  return `cat > ${path.resolve(__dirname, '../all-kkb/' + bypyDir + '/repo/config/single-download.js')} << EOF
 module.exports = {
     m3u8Url: '${m3u8Url}',
     courseName: '${courseName}',
@@ -38,7 +24,7 @@ let getSingleFormatConfigJsCmd = (m3u8Url, courseName, bypyFullDir, bypyDir) => 
   if (typeof courseIds === 'object') {
     courseIds = courseIds.join(',')
   }
-  return `cat >> ${path.resolve(__dirname, '../all-kkb/' + bypyDir + '/repo/config/single-download')} << EOF
+  return `cat > ${path.resolve(__dirname, '../all-kkb/' + bypyDir + '/repo/config/single-download')} << EOF
 m3u8Url='${m3u8Url}'
 courseName='${courseName}'
 bypyFullDir='${bypyFullDir}'
@@ -51,7 +37,7 @@ let getFormatConfigCmd = (name, cookie, courseIds = []) => {
   if (typeof courseIds === 'object') {
     courseIds = courseIds.join(',')
   }
-  return `cat >> ${path.resolve(__dirname, '../all-kkb/' + name)}/config << EOF
+  return `cat > ${path.resolve(__dirname, '../all-kkb/' + name)}/config << EOF
 name="${name}"
 cookie="${cookie.replace(/"/g, "'")}"
 courseIds='${courseIds}'
@@ -82,8 +68,6 @@ router.post('/start', async (ctx, next) => {
     let startDownCmd = getStartDownCmd(name)
     let cmds = [
       `rm -rf ${path.resolve(__dirname, '../all-kkb/' + name)}`,
-      // 切换目录
-      `cd ${path.resolve(__dirname, '../all-kkb')}`,
       cloneAllShRepoCmd,
       // formatConfigNameCmd,
       formatConfigCmd,
@@ -108,44 +92,23 @@ router.post('/start', async (ctx, next) => {
     ctx.body = `下载失败，原因: ${error}`
   }
 })
-router.post('/retry', async (ctx, next) => {
-  try {
-    let { m3u8Url, bypyDir, bypyFullDir, filename } = ctx.request.body
-    // 执行启动重新执行脚本
-    process.nextTick(
-      () => {
-        let singleDownCmd = getSingleDownCmd(m3u8Url, bypyDir, bypyFullDir, filename)
-
-        try {
-          utils.doShellCmd(singleDownCmd)
-        } catch (error) {
-          console.log(`执行失败${error}`);
-          ctx.body = `重传失败，原因: ${error}`
-        }
-      }
-    )
-    ctx.body = '执行成功，正在下载单个视频'
-  } catch (error) {
-    ctx.body = `重传失败，原因: ${error}`
-  }
-})
+// 下载单个视频
 router.post('/down-single', async (ctx, next) => {
   try {
     let { m3u8Url, courseName, bypyFullDir, bypyDir } = ctx.request.body
+    let currentRepoPath = path.resolve(__dirname, '../all-kkb/' + bypyDir + '/repo')
     debugger
     let singleFormatConfigJsCmd = getSingleFormatConfigJsCmd(m3u8Url, courseName, bypyFullDir, bypyDir);
     let singleFormatConfigCmd = getSingleFormatConfigCmd(m3u8Url, courseName, bypyFullDir, bypyDir);
     let cmds = [
-      `rm -rf ${path.resolve(__dirname, '../all-kkb/' + bypyDir + '/repo/config/single-download-config.js')}`,
-      `rm -rf ${path.resolve(__dirname, '../all-kkb/' + bypyDir + '/repo/config/single-download-config')}`,
+      // `rm -rf ${currentRepoPath}/config/single-download-config.js`,
+      // `rm -rf ${currentRepoPath}/config/single-download-config`,
       // 切换目录
-      `cd ${path.resolve(__dirname, '../all-kkb/' + bypyDir + '/repo')}`,
       singleFormatConfigJsCmd,
       singleFormatConfigCmd,
-      // formatConfigCookieCmd,
-      // 'npm run single-download'
-      'npm run single-download-sh' // 考虑到日志输出问题，采用sh方式执行
+      `cd ${currentRepoPath} && npm run single-download-sh` // 考虑到日志输出问题，采用sh方式执行
     ]
+    debugger
     // 执行启动重新执行脚本
     process.nextTick(
       async () => {
