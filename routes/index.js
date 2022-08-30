@@ -39,9 +39,9 @@ let getFormatConfigCmd = (currentShRepoPath, name, cookie, courseIds = []) => {
   }
   debugger
   return `cat > ${currentShRepoPath}/config << EOF
-name="'${name}'"
+name="${name}"
 cookie="${cookie.replace(/"/g, "'")}"
-courseIds="'${courseIds}'"
+courseIds="${courseIds}"
 EOF
 `
 }
