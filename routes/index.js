@@ -1,7 +1,7 @@
 const router = require('koa-router')()
 const path = require('path')
 const utils = require('../utils/index')
-let getCloneAllShRepoCmd = (name) => `git clone git@github.com:Sympath/download-sh.git ${path.resolve(__dirname, '../all-kkb/' + name)}`
+let getCloneAllShRepoCmd = (currentShRepoPath) => `git clone git@github.com:Sympath/download-sh.git ${currentShRepoPath}`
 let getStartDownCmd = (currentShRepoPath) => `cd ${currentShRepoPath} && npm run all`
 let getRunDownCmd = (currentShRepoPath) => `cd ${currentShRepoPath} && npm run config-retry`
 // 下载单个视频时写入本地文件配置
@@ -37,10 +37,11 @@ let getFormatConfigCmd = (currentShRepoPath, name, cookie, courseIds = []) => {
   if (typeof courseIds === 'object') {
     courseIds = courseIds.join(',')
   }
+  debugger
   return `cat > ${currentShRepoPath}/config << EOF
-name="${name}"
+name="'${name}'"
 cookie="${cookie.replace(/"/g, "'")}"
-courseIds='${courseIds}'
+courseIds="'${courseIds}'"
 EOF
 `
 }
@@ -50,6 +51,7 @@ router.post('/start', async (ctx, next) => {
   console.log(cookie, name);
   let currentRepoPath = path.resolve(__dirname, '../all-kkb/' + name + '/repo')
   let currentShRepoPath = path.resolve(__dirname, '../all-kkb/' + name)
+  debugger
   if (typeof cookie === 'object') {
     cookie = JSON.stringify(cookie)
   }
@@ -60,8 +62,9 @@ router.post('/start', async (ctx, next) => {
   try {
     // 创建空间
     await utils.checkPath(path.resolve(__dirname, '../all-kkb'))
+    debugger
     // 下载脚本仓库
-    let cloneAllShRepoCmd = getCloneAllShRepoCmd(name);
+    let cloneAllShRepoCmd = getCloneAllShRepoCmd(currentShRepoPath);
     // 更换配置
     let formatConfigCmd = getFormatConfigCmd(currentShRepoPath, name, cookie, courseIds);
     // let formatConfigNameCmd = getFormatConfigNameCmd(name, cookie);
@@ -69,7 +72,7 @@ router.post('/start', async (ctx, next) => {
     // 执行启动下载脚本
     let startDownCmd = getStartDownCmd(currentShRepoPath, name)
     let cmds = [
-      `rm -rf ${path.resolve(__dirname, '../all-kkb/' + name)}`,
+      `rm -rf ${currentShRepoPath}`,
       cloneAllShRepoCmd,
       // formatConfigNameCmd,
       formatConfigCmd,
