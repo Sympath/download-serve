@@ -33,7 +33,7 @@ EOF
 `
 }
 // 下载所有视频时写入本地文件配置
-let getFormatConfigCmd = (currentShRepoPath, name, cookie, courseIds = []) => {
+let getFormatConfigCmd = (currentShRepoPath, name, cookie, courseIds = [], donwType = "") => {
   if (typeof courseIds === 'object') {
     courseIds = courseIds.join(',')
   }
@@ -41,13 +41,14 @@ let getFormatConfigCmd = (currentShRepoPath, name, cookie, courseIds = []) => {
   return `cat > ${currentShRepoPath}/config << EOF
 name="${name}"
 cookie="${cookie.replace(/"/g, "'")}"
-courseIds="${courseIds}"
+courseIds="${courseIds}",
+donwType="${donwType}",
 EOF
 `
 }
 router.post('/start', async (ctx, next) => {
   // courseIds 用于指定要下载那些课程；如果为空数组则全部下载
-  let { cookie, name, courseIds } = ctx.request.body
+  let { cookie, name, courseIds, donwType = 'down-all' } = ctx.request.body
   console.log(cookie, name);
   let currentRepoPath = path.resolve(__dirname, '../all-kkb/' + name + '/repo')
   let currentShRepoPath = path.resolve(__dirname, '../all-kkb/' + name)
@@ -66,13 +67,13 @@ router.post('/start', async (ctx, next) => {
     // 下载脚本仓库
     let cloneAllShRepoCmd = getCloneAllShRepoCmd(currentShRepoPath);
     // 更换配置
-    let formatConfigCmd = getFormatConfigCmd(currentShRepoPath, name, cookie, courseIds);
+    let formatConfigCmd = getFormatConfigCmd(currentShRepoPath, name, cookie, courseIds, donwType);
     // let formatConfigNameCmd = getFormatConfigNameCmd(name, cookie);
     // let formatConfigCookieCmd = getFormatConfigCookieCmd(name, cookie);
     // 执行启动下载脚本
     let startDownCmd = getStartDownCmd(currentShRepoPath, name)
     let cmds = [
-      `rm -rf ${currentShRepoPath}`,
+      // `rm -rf ${currentShRepoPath}`,
       cloneAllShRepoCmd,
       // formatConfigNameCmd,
       formatConfigCmd,
